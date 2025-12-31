@@ -1,65 +1,46 @@
-import Image from "next/image";
+import { Task } from "./type"
 
-export default function Home() {
+// データを取得する関数（JavaでいうServiceメソッドのようなもの）
+async function getTasks(): Promise<Task[]> {
+  // 環境変数からURLを取得
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  
+  // fetchでAPIを叩く
+  const res = await fetch(`${apiUrl}/tasks/`, {
+    cache: "no-store", // 常に最新データを取得する設定（SSR）
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text(); // エラーの詳細メッセージを取得
+  console.log("------------------------------------------------");
+  console.log("★API Error Status:", res.status);
+  console.log("★API Error Text:", errorText);
+  console.log("------------------------------------------------");
+    throw new Error("Failed to fetch tasks");
+  }
+
+  // JSONを受け取って、Task型の配列として返す
+  // Spring Bootの戻り値に合わせて修正してください（{ results: ... } 形式の場合など）
+  // 今回のYAML定義だと { page:..., results: [...] } なので注意！
+  const data = await res.json();
+  return data.results; 
+}
+
+// メインのページコンポーネント
+export default async function Home() {
+  // ここでデータを取得（非同期）
+  const tasks = await getTasks();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main style={{ padding: "20px" }}>
+      <h1>タスク一覧</h1>
+      <ul>
+        {tasks.map((task) => (
+          <li key={task.id} style={{ borderBottom: "1px solid #ccc", padding: "10px" }}>
+            {task.id}: {task.title}
+          </li>
+        ))}
+      </ul>
+    </main>
   );
 }
